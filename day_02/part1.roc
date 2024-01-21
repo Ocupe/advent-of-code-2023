@@ -3,9 +3,12 @@ app "day-2-part-1"
     imports [pf.Stdout, pf.Task.{ Task }, pf.Utc, "input.txt" as puzzleInput : Str]
     provides [main] to pf
 
+day = "2"
+part = "1"
+
 main =
     start <- Task.await Utc.now
-
+    _ <- Task.await (Stdout.line "Run app for day \(day) (part \(part)):")
     result =
         puzzleInput
         |> Str.split "\n"
@@ -14,10 +17,10 @@ main =
         |> List.map .id
         |> List.sum
 
-    _ <- Task.await (Stdout.line "Result part 1:  \(Num.toStr result)")
+    _ <- Task.await (Stdout.line " Result: \(Num.toStr result)")
     end <- Task.await Utc.now
     duration = end |> Utc.deltaAsMillis start |> Num.toStr
-    Stdout.line ("It took \(duration)ms to run day 1 part 1.")
+    Stdout.line ("It took \(duration)ms to run day \(day) part \(part).\n")
 
 Game : {
     id : Num.U16,
@@ -65,10 +68,14 @@ parseGrap = \inputStr ->
         |> Str.toU16
         |> Result.withDefault 0
 
-    # eg: ["3 blue", " 4 red", "3 green"]
+    defaultGrap : Grap
+    defaultGrap = { red: 0, green: 0, blue: 0 }
+
+    # 3 blue
+    # 4 red
     colorStrs
     |> List.walk
-        { red: 0, green: 0, blue: 0 }
+        defaultGrap
         (\state, color ->
             when Str.graphemes color is
                 [.. as nr, "b", "l", "u", "e"] ->
@@ -83,15 +90,16 @@ parseGrap = \inputStr ->
                 _ -> crash "Unknown color (should be blue, red or green)"
         )
 
-isGamePossible : Game -> Bool
+# Determine which games would have been possible if the bag had been loaded with only
+# 12 red cubes,
+# 13 green cubes,
+# and 14 blue cubes.
+
+redCubes = 12
+greenCubes = 13
+blueCubes = 14
+# isGamePossible : Game -> Result Game Str
 isGamePossible = \{ graps } ->
-    # Determine which games would have been possible if the bag had been loaded with only
-    # 12 red cubes,
-    # 13 green cubes,
-    # and 14 blue cubes.
-    redCubes = 12
-    greenCubes = 13
-    blueCubes = 14
     grapsPossible =
         List.keepIf graps (\{ red, green, blue } -> red <= redCubes && green <= greenCubes && blue <= blueCubes)
     (List.len graps) == (List.len grapsPossible)
