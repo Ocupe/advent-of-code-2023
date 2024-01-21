@@ -3,6 +3,9 @@ app "day-2-part-2"
     imports [pf.Stdout, pf.Task.{ Task }, pf.Utc, "input.txt" as puzzleInput : Str]
     provides [main] to pf
 
+day = 2
+part = 2
+
 main =
     start <- Task.await Utc.now
 
@@ -14,10 +17,10 @@ main =
         |> List.map .id
         |> List.sum
 
-    _ <- Task.await (Stdout.line "Result part 1:  \(Num.toStr result)")
+    _ <- Task.await (Stdout.line "Result part \(Num.toStr 2): \(Num.toStr result)")
     end <- Task.await Utc.now
     duration = end |> Utc.deltaAsMillis start |> Num.toStr
-    Stdout.line ("It took \(duration)ms to run day 1 part 1.")
+    Stdout.line ("It took \(duration)ms to run day \(Num.toStr day) part \(Num.toStr part).")
 
 Game : {
     id : Num.U16,

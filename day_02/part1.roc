@@ -65,7 +65,7 @@ parseGrap = \inputStr ->
         |> Str.toU16
         |> Result.withDefault 0
 
-    # ["3 blue", " 4 red", "3 green"]
+    # eg: ["3 blue", " 4 red", "3 green"]
     colorStrs
     |> List.walk
         { red: 0, green: 0, blue: 0 }
