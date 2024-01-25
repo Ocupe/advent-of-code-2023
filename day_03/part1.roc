@@ -48,8 +48,8 @@ parseGrid = \rows ->
                     field : Field
                     field =
                         when col is
-                            49 | 50 | 51 | 52 | 53 | 54 | 55 | 56 | 57 -> Number { utf8: col, str: Result.withDefault (Str.fromUtf8 [col]) "ERROR" }
-                            46 -> Empty
+                            48 | 49 | 50 | 51 | 52 | 53 | 54 | 55 | 56 | 57 -> Number { utf8: col, str: Result.withDefault (Str.fromUtf8 [col]) "ERROR" }
+                            46 -> Empty # 46 is .
                             _ -> Symbol
                     Dict.insert stateCopy { row: rowIndex, col: colIndex } field
                 )
