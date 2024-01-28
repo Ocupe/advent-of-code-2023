@@ -17,6 +17,20 @@ main =
     duration = end |> Utc.deltaAsMillis start |> Num.toStr
     Stdout.line ("It took \(duration)ms to run day \(day) part \(part).\n")
 
+exampleInput =
+    """
+    467..114..
+    ...*......
+    ..35..633.
+    ......#...
+    617*......
+    .....+.58.
+    ..592.....
+    ......755.
+    ...$.*....
+    .664.598..
+    """
+
 solve = \input ->
     grid =
         input
@@ -37,21 +51,17 @@ solve = \input ->
                         _ -> innerState
                 )
         )
-    # dbg symboles
 
     partialNumbers =
         symboles
         |> List.map (\(row, col) -> findNumbersAdjacentToSymbol grid (row, col))
         |> List.join
-    # dbg partialNumbers
 
     expandedNumbers =
         partialNumbers
-        |> List.map (\hit -> expandVertically grid hit) # |> List.map (\record -> record.value) # |> List.keepOks Str.fromUtf8
-        # |> List.keepOks Str.toU32
+        |> List.map (\hit -> expandVertically grid hit)
         |> Set.fromList
         |> Set.toList
-    dbg expandedNumbers
 
     expandedNumbers |> List.map .value |> List.sum
     
@@ -74,9 +84,7 @@ parseField = \value ->
         46 -> Empty # 46 is .
         _ -> Symbole
 
-# findNumbersAdjacentToSymbol : Grid, (Num.U8, Num.U8) -> List (Num.U8, Num.U8)
 findNumbersAdjacentToSymbol = \grid, (row, col) ->
-
     suroundingFields = [
         { row: row - 1, col: col - 1 },
         { row: row - 1, col: col },
@@ -135,9 +143,6 @@ expandVertically = \grid, hit ->
 
             )
 
-    dbg hit
-    dbg range
-
     start = List.first range |> Result.withDefault 0
     end = List.last range |> Result.withDefault 0
     count = end - start + 1
@@ -155,19 +160,4 @@ expandVertically = \grid, hit ->
         |> Result.withDefault 0
         |> (\numList -> { value: numList, row: hit.row, cols: range })
 
-    dbg number
     number
-
-exampleInput =
-    """
-    467..114..
-    ...*......
-    ..35..633.
-    ......#...
-    617*......
-    .....+.58.
-    ..592.....
-    ......755.
-    ...$.*....
-    .664.598..
-    """
