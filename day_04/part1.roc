@@ -4,7 +4,7 @@ app "day-4-part-1"
         pf.Stdout,
         pf.Task.{ Task },
         pf.Utc,
-        # "input.txt" as puzzleInput : Str,
+        "input.txt" as puzzleInput : Str,
     ]
     provides [main] to pf
 
@@ -21,12 +21,15 @@ testInput =
     Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
     """
 
+testInputResult : Num.U32
+testInputResult = 13
+
 main =
     start <- Task.await Utc.now
     _ <- Task.await (Stdout.line "Run app for day \(day) (part \(part)):")
 
     _ <- Task.await (Stdout.line " Result:")
-    dbg solve testInput
+    dbg solve puzzleInput
 
     end <- Task.await Utc.now
     duration = end |> Utc.deltaAsMillis start |> Num.toStr
@@ -35,12 +38,16 @@ main =
 solve = \input ->
     input
     |> Str.split "\n"
-    |> List.map parseRow
+    |> List.map rowToCard
+    |> List.map cardValue
+    |> List.sum
+
+expect (solve testInput) == testInputResult
 
 Card : { id : Str, winningNumbers : List U32, numbers : List U32 }
 
-parseRow : Str -> Card
-parseRow = \str ->
+rowToCard : Str -> Card
+rowToCard = \str ->
     str
     |> Str.splitFirst ":"
     |> (\result ->
@@ -53,7 +60,7 @@ parseRow = \str ->
             Err NotFound -> crash "Every row should have a ':'"
     )
 
-expect (parseRow "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53") == { id: "1", winningNumbers: [41, 48, 83, 86, 17], numbers: [83, 86, 6, 31, 17, 9, 48, 53] }
+expect (rowToCard "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53") == { id: "1", winningNumbers: [41, 48, 83, 86, 17], numbers: [83, 86, 6, 31, 17, 9, 48, 53] }
 
 parseId : Str -> Str
 parseId = \str ->
@@ -104,7 +111,6 @@ cardValue = \card ->
     numbers = Set.fromList card.numbers
 
     elements = Set.intersection winningNumbers numbers |> Set.toList
-    dbg winningNumbers
 
     List.walk
         elements
