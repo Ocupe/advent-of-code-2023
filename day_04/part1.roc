@@ -4,7 +4,7 @@ app "day-4-part-1"
         pf.Stdout,
         pf.Task.{ Task },
         pf.Utc,
-        # "input.txt" as puzzleInput : Str,
+        "input.txt" as puzzleInput : Str,
     ]
     provides [main] to pf
 
@@ -21,12 +21,15 @@ testInput =
     Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
     """
 
+testInputResult : Num.U32
+testInputResult = 13
+
 main =
     start <- Task.await Utc.now
     _ <- Task.await (Stdout.line "Run app for day \(day) (part \(part)):")
 
     _ <- Task.await (Stdout.line " Result:")
-    dbg solve testInput
+    dbg solve puzzleInput
 
     end <- Task.await Utc.now
     duration = end |> Utc.deltaAsMillis start |> Num.toStr
@@ -35,46 +38,58 @@ main =
 solve = \input ->
     input
     |> Str.split "\n"
+    |> List.map rowToCard
+    |> List.map cardValue
+    |> List.sum
 
-# parseRow = \str ->
-#     str
-#     |> Str.splitFirst ": "
-#     |> (\result ->
-#         when result is
-#             Ok { before, after } ->
-#                 id = parseId before
-#                 { winningNumbers, numbers } = parseNumbersBlock after
-#                 { id : id,  winningNumbers : winningNumbers, numbers : numbers }
+expect (solve testInput) == testInputResult
 
-#             Err NotFound -> crash "Every row should have a ':'"
-#     )
+Card : { id : Str, winningNumbers : List U32, numbers : List U32 }
 
-# parseId = \str ->
-#     str
-#     |> Str.split " "
-#     |> List.last
-#     |> (\result ->
-#         when result is
-#             Ok id -> id
-#             Err ListWasEmpty -> crash "Every row should have an id"
-#     )
+rowToCard : Str -> Card
+rowToCard = \str ->
+    str
+    |> Str.splitFirst ":"
+    |> (\result ->
+        when result is
+            Ok { before, after } ->
+                id = parseId before
+                { winningNumbers, numbers } = parseNumberBlock after
+                { id: id, winningNumbers: winningNumbers, numbers: numbers }
 
-# parseNumbersBlock = \str ->
-#     str
-#     |> Str.splitFirst " | "
-#     |> (\result ->
-#         when result is
-#             Ok { before, after } ->
-#                 {
-#                     winningNumbers: parseNumbers before
-#                     numbers: parseNumbers after
-#                 }
+            Err NotFound -> crash "Every row should have a ':'"
+    )
 
-#             Err NotFound -> crash "Every row should have a | separator."
-#     )
+expect (rowToCard "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53") == { id: "1", winningNumbers: [41, 48, 83, 86, 17], numbers: [83, 86, 6, 31, 17, 9, 48, 53] }
 
-# expect (parseNumberBlock "41 48 83 86 17 | 83 86  6 31 17  9 48 53") == { winningNumbers: [41, 48, 83, 86, 17], numbers: [83, 86, 6, 31, 17, 9, 48, 53]}
+parseId : Str -> Str
+parseId = \str ->
+    str
+    |> Str.split " "
+    |> List.last
+    |> (\result ->
+        when result is
+            Ok id -> id
+            Err ListWasEmpty -> crash "Every row should have an id"
+    )
 
+expect (parseId "Card 1") == "1"
+
+parseNumberBlock : Str -> { winningNumbers : List U32, numbers : List U32 }
+parseNumberBlock = \str ->
+    str
+    |> Str.splitFirst "|"
+    |> (\result ->
+        when result is
+            Ok { before, after } ->
+                { winningNumbers: parseNumbers before, numbers: parseNumbers after }
+
+            Err NotFound -> crash "Every row should have a | separator."
+    )
+
+expect (parseNumberBlock "41 48 83 86 17 | 83 86  6 31 17  9 48 53") == { winningNumbers: [41, 48, 83, 86, 17], numbers: [83, 86, 6, 31, 17, 9, 48, 53] }
+
+parseNumbers : Str -> List U32
 parseNumbers = \str ->
     str
     |> Str.split " "
@@ -89,4 +104,22 @@ parseNumbers = \str ->
         )
 
 expect (parseNumbers "83 86  6 31 17  9 48 53") == [83, 86, 6, 31, 17, 9, 48, 53]
-# expect (parseRow "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53") == { id: 1, winningNumbers: [41, 48, 83, 86, 17], numbers: [83, 86, 6, 31, 17, 9, 48, 53] }
+
+cardValue : Card -> Num.U32
+cardValue = \card ->
+    winningNumbers = Set.fromList card.winningNumbers
+    numbers = Set.fromList card.numbers
+
+    elements = Set.intersection winningNumbers numbers |> Set.toList
+
+    List.walk
+        elements
+        0
+        (\state, _ ->
+            if state == 0 then
+                1
+            else
+                state * 2
+        )
+
+expect (cardValue { id: "1", winningNumbers: [41, 48, 83, 86, 17], numbers: [83, 86, 6, 31, 17, 9, 48, 53] }) == 8
