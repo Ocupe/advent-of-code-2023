@@ -35,46 +35,54 @@ main =
 solve = \input ->
     input
     |> Str.split "\n"
+    |> List.map parseRow
 
-# parseRow = \str ->
-#     str
-#     |> Str.splitFirst ": "
-#     |> (\result ->
-#         when result is
-#             Ok { before, after } ->
-#                 id = parseId before
-#                 { winningNumbers, numbers } = parseNumbersBlock after
-#                 { id : id,  winningNumbers : winningNumbers, numbers : numbers }
+Card : { id : Str, winningNumbers : List U32, numbers : List U32 }
 
-#             Err NotFound -> crash "Every row should have a ':'"
-#     )
+parseRow : Str -> Card
+parseRow = \str ->
+    str
+    |> Str.splitFirst ":"
+    |> (\result ->
+        when result is
+            Ok { before, after } ->
+                id = parseId before
+                { winningNumbers, numbers } = parseNumberBlock after
+                { id: id, winningNumbers: winningNumbers, numbers: numbers }
 
-# parseId = \str ->
-#     str
-#     |> Str.split " "
-#     |> List.last
-#     |> (\result ->
-#         when result is
-#             Ok id -> id
-#             Err ListWasEmpty -> crash "Every row should have an id"
-#     )
+            Err NotFound -> crash "Every row should have a ':'"
+    )
 
-# parseNumbersBlock = \str ->
-#     str
-#     |> Str.splitFirst " | "
-#     |> (\result ->
-#         when result is
-#             Ok { before, after } ->
-#                 {
-#                     winningNumbers: parseNumbers before
-#                     numbers: parseNumbers after
-#                 }
+expect (parseRow "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53") == { id: "1", winningNumbers: [41, 48, 83, 86, 17], numbers: [83, 86, 6, 31, 17, 9, 48, 53] }
 
-#             Err NotFound -> crash "Every row should have a | separator."
-#     )
+parseId : Str -> Str
+parseId = \str ->
+    str
+    |> Str.split " "
+    |> List.last
+    |> (\result ->
+        when result is
+            Ok id -> id
+            Err ListWasEmpty -> crash "Every row should have an id"
+    )
 
-# expect (parseNumberBlock "41 48 83 86 17 | 83 86  6 31 17  9 48 53") == { winningNumbers: [41, 48, 83, 86, 17], numbers: [83, 86, 6, 31, 17, 9, 48, 53]}
+expect (parseId "Card 1") == "1"
 
+parseNumberBlock : Str -> { winningNumbers : List U32, numbers : List U32 }
+parseNumberBlock = \str ->
+    str
+    |> Str.splitFirst "|"
+    |> (\result ->
+        when result is
+            Ok { before, after } ->
+                { winningNumbers: parseNumbers before, numbers: parseNumbers after }
+
+            Err NotFound -> crash "Every row should have a | separator."
+    )
+
+expect (parseNumberBlock "41 48 83 86 17 | 83 86  6 31 17  9 48 53") == { winningNumbers: [41, 48, 83, 86, 17], numbers: [83, 86, 6, 31, 17, 9, 48, 53] }
+
+parseNumbers : Str -> List U32
 parseNumbers = \str ->
     str
     |> Str.split " "
@@ -89,4 +97,23 @@ parseNumbers = \str ->
         )
 
 expect (parseNumbers "83 86  6 31 17  9 48 53") == [83, 86, 6, 31, 17, 9, 48, 53]
-# expect (parseRow "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53") == { id: 1, winningNumbers: [41, 48, 83, 86, 17], numbers: [83, 86, 6, 31, 17, 9, 48, 53] }
+
+cardValue : Card -> Num.U32
+cardValue = \card ->
+    winningNumbers = Set.fromList card.winningNumbers
+    numbers = Set.fromList card.numbers
+
+    elements = Set.intersection winningNumbers numbers |> Set.toList
+    dbg winningNumbers
+
+    List.walk
+        elements
+        0
+        (\state, _ ->
+            if state == 0 then
+                1
+            else
+                state * 2
+        )
+
+expect (cardValue { id: "1", winningNumbers: [41, 48, 83, 86, 17], numbers: [83, 86, 6, 31, 17, 9, 48, 53] }) == 8
