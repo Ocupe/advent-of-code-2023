@@ -4,7 +4,7 @@ app "day-3-part-2"
         pf.Stdout,
         pf.Task.{ Task },
         pf.Utc,
-        # "input.txt" as puzzleInput : Str,
+        "input.txt" as puzzleInput : Str,
     ]
     provides [main] to pf
 
@@ -15,7 +15,7 @@ main =
     start <- Task.await Utc.now
     _ <- Task.await (Stdout.line "Run app for day \(day) (part \(part)):")
 
-    result = solve exampleInput
+    result = solve puzzleInput
 
     _ <- Task.await (Stdout.line " Result: \(Num.toStr result)")
     end <- Task.await Utc.now
@@ -41,7 +41,7 @@ solve = \input ->
         input
         |> to2dArray
 
-    symboles = List.walkWithIndex
+    gears = List.walkWithIndex
         grid
         []
         (\state, row, rowIndex ->
@@ -50,27 +50,41 @@ solve = \input ->
                 state
                 (\innerState, field, colIndex ->
                     when field is
-                        Symbole ->
+                        Gear ->
                             List.append innerState (rowIndex, colIndex)
 
                         _ -> innerState
                 )
         )
 
-    partialNumbers =
-        symboles
-        |> List.map (\(row, col) -> findNumbersAdjacentToSymbol grid (row, col))
-        |> List.join
+    # dbg gears
 
-    expandedNumbers =
-        partialNumbers
-        |> List.map (\hit -> expandVertically grid hit)
-        |> Set.fromList
-        |> Set.toList
+    numberHits =
+        gears
+        |> List.map
+            (\(row, col) -> findNumbersAdjacentToSymbol grid (row, col))
+        |> List.map (\listOfNeigbors -> List.map listOfNeigbors (\hit -> expandVertically grid hit))
+        |> List.map Set.fromList
+        |> List.map Set.toList
+        |> List.map
+            (\list ->
+                if (List.len list) == 2 then list else []) # Include only gears with 2 adjacent numbers.
 
-    expandedNumbers |> List.map .value |> List.sum
+    dbg numberHits
 
-Field : [Number Num.U8, Symbole, Empty]
+    gearRatios =
+        numberHits
+        |> List.map
+            (\pair ->
+                when pair is
+                    [a, b] -> a.value * b.value
+                    [] -> 0
+                    _ -> crash "List is not a pair.")
+        |> List.sum
+
+    gearRatios
+
+Field : [Number Num.U8, Gear, Symbole, Empty]
 
 Grid : List (List Field)
 
@@ -86,6 +100,7 @@ parseField = \value ->
     when value is
         48 | 49 | 50 | 51 | 52 | 53 | 54 | 55 | 56 | 57 -> Number value
         46 -> Empty # 46 is .
+        42 -> Gear # 42 is *
         _ -> Symbole
 
 findNumbersAdjacentToSymbol = \grid, (row, col) ->
@@ -165,4 +180,5 @@ expandVertically = \grid, hit ->
         |> Result.withDefault 0
         |> (\numList -> { value: numList, row: hit.row, cols: range })
 
+    # dbg { start, end}
     number
