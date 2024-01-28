@@ -57,22 +57,18 @@ solve = \input ->
                 )
         )
 
-    # dbg gears
-
     numberHits =
         gears
         |> List.map
             (\(row, col) -> findNumbersAdjacentToSymbol grid (row, col))
-        |> List.map (\listOfNeigbors -> List.map listOfNeigbors (\hit -> expandVertically grid hit))
-        |> List.map Set.fromList
+        |> List.map (\listOfNeigbors -> List.map listOfNeigbors (\hit -> numberFromHit grid hit))
+        |> List.map Set.fromList # Remove duplicates
         |> List.map Set.toList
         |> List.map
             (\list ->
                 if (List.len list) == 2 then list else []) # Include only gears with 2 adjacent numbers.
 
-    dbg numberHits
-
-    gearRatios =
+    sumGearRatios =
         numberHits
         |> List.map
             (\pair ->
@@ -82,7 +78,7 @@ solve = \input ->
                     _ -> crash "List is not a pair.")
         |> List.sum
 
-    gearRatios
+    sumGearRatios
 
 Field : [Number Num.U8, Gear, Symbole, Empty]
 
@@ -141,7 +137,7 @@ findNumbersAdjacentToSymbol = \grid, (row, col) ->
 
     suroundingNumbersFields
 
-expandVertically = \grid, hit ->
+numberFromHit = \grid, hit ->
     row = List.get grid hit.row |> Result.withDefault []
     range =
         List.walkWithIndexUntil
