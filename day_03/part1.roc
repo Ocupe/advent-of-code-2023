@@ -47,14 +47,14 @@ solve = \input ->
 
     expandedNumbers =
         partialNumbers
-        |> List.map (\hit -> expandVertically grid hit)
-        |> List.keepOks Str.fromUtf8
-        |> List.keepOks Str.toU32
+        |> List.map (\hit -> expandVertically grid hit) # |> List.map (\record -> record.value) # |> List.keepOks Str.fromUtf8
+        # |> List.keepOks Str.toU32
         |> Set.fromList
         |> Set.toList
-    # dbg expandedNumbers
+    dbg expandedNumbers
 
-    expandedNumbers |> List.sum
+    expandedNumbers |> List.map .value |> List.sum
+    
 
 Field : [Number Num.U8, Symbole, Empty]
 
@@ -112,39 +112,51 @@ findNumbersAdjacentToSymbol = \grid, (row, col) ->
                 )
             )
 
-    dbg (row, col)
-
-    dbg suroundingNumbersFields
-
-    # |> List.keepIf
-    #     (\field ->
-    #         when field is
-    #             Number _ -> Bool.true
-    #             _ -> Bool.false
-    #     )
     suroundingNumbersFields
 
-expandVertically = \grid, { row: rowIndex, col: hitCol } ->
-    row = List.get grid rowIndex |> Result.withDefault []
-    numberList = List.walkWithIndexUntil
-        row
-        []
-        (\state, field, currentCol ->
-            if currentCol <= hitCol then
-                # Before hit
-                when field is
-                    Number value -> Continue (List.append state value)
-                    _ -> Continue []
-            else
-                # After hit
-                when field is
-                    Number value -> Continue (List.append state value)
-                    _ -> Break state
+expandVertically = \grid, hit ->
+    row = List.get grid hit.row |> Result.withDefault []
+    range =
+        List.walkWithIndexUntil
+            row
+            []
+            (\state, field, currentCol ->
+                if currentCol <= hit.col then
+                    # Before hit
+                    when field is
+                        # Todo: get the start and end column values from the hit
+                        Number value -> Continue (List.append state currentCol)
+                        _ -> Continue []
+                else
+                    # After hit
+                    when field is
+                        Number value -> Continue (List.append state currentCol)
+                        _ -> Break state
 
-        )
-    dbg numberList
+            )
 
-    numberList
+    dbg hit
+    dbg range
+
+    start = List.first range |> Result.withDefault 0
+    end = List.last range |> Result.withDefault 0
+    count = end - start + 1
+
+    number = row
+        |> List.map
+            (\field ->
+                when field is
+                    Number value -> value
+                    _ -> 0
+            )
+        |> Str.fromUtf8Range { start, count }
+        |> Result.withDefault "0"
+        |> Str.toU32
+        |> Result.withDefault 0
+        |> (\numList -> { value: numList, row: hit.row, cols: range })
+
+    dbg number
+    number
 
 exampleInput =
     """
