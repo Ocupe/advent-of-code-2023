@@ -1,6 +1,11 @@
 app "day-3-part-2"
     packages { pf: "https://github.com/roc-lang/basic-cli/releases/download/0.7.1/Icc3xJoIixF3hCcfXrDwLCu4wQHtNdPyoJkEbkgIElA.tar.br" }
-    imports [pf.Stdout, pf.Task.{ Task }, pf.Utc, "input.txt" as puzzleInput : Str]
+    imports [
+        pf.Stdout,
+        pf.Task.{ Task },
+        pf.Utc,
+        # "input.txt" as puzzleInput : Str,
+    ]
     provides [main] to pf
 
 day = "3"
@@ -10,7 +15,7 @@ main =
     start <- Task.await Utc.now
     _ <- Task.await (Stdout.line "Run app for day \(day) (part \(part)):")
 
-    result = solve puzzleInput
+    result = solve exampleInput
 
     _ <- Task.await (Stdout.line " Result: \(Num.toStr result)")
     end <- Task.await Utc.now
@@ -112,7 +117,7 @@ findNumbersAdjacentToSymbol = \grid, (row, col) ->
                     when maybeField is
                         Ok selectedField ->
                             when selectedField is
-                                Number value -> List.append state ({ row: probe.row, col: probe.col })
+                                Number _ -> List.append state ({ row: probe.row, col: probe.col })
                                 _ -> state
 
                         Err OutOfBounds -> crash "Field not found in row."
@@ -132,12 +137,12 @@ expandVertically = \grid, hit ->
                     # Before hit
                     when field is
                         # Todo: get the start and end column values from the hit
-                        Number value -> Continue (List.append state currentCol)
+                        Number _ -> Continue (List.append state currentCol)
                         _ -> Continue []
                 else
                     # After hit
                     when field is
-                        Number value -> Continue (List.append state currentCol)
+                        Number _ -> Continue (List.append state currentCol)
                         _ -> Break state
 
             )
