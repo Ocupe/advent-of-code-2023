@@ -33,6 +33,7 @@ solve = \input ->
                     when field is
                         Symbole ->
                             List.append innerState (rowIndex, colIndex)
+
                         _ -> innerState
                 )
         )
@@ -125,25 +126,25 @@ findNumbersAdjacentToSymbol = \grid, (row, col) ->
 
 expandVertically = \grid, { row: rowIndex, col: hitCol } ->
     row = List.get grid rowIndex |> Result.withDefault []
-    numberList = List.walkWithIndexUntil row [] (\state, field, currentCol ->
-        if currentCol <= hitCol then
-            # Before hit 
-            when field is
-                Number value -> Continue (List.append state value)
-                _ -> Continue []
-        else
-            # After hit
-            when field is
-                Number value -> Continue (List.append state value)
-                _ -> Break state
+    numberList = List.walkWithIndexUntil
+        row
+        []
+        (\state, field, currentCol ->
+            if currentCol <= hitCol then
+                # Before hit
+                when field is
+                    Number value -> Continue (List.append state value)
+                    _ -> Continue []
+            else
+                # After hit
+                when field is
+                    Number value -> Continue (List.append state value)
+                    _ -> Break state
 
-    )
+        )
     dbg numberList
+
     numberList
-
-
-
-            
 
 exampleInput =
     """
