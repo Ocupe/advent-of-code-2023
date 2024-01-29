@@ -1,4 +1,4 @@
-app "day-4-part-1"
+app "day-4-part-2"
     packages { pf: "https://github.com/roc-lang/basic-cli/releases/download/0.7.1/Icc3xJoIixF3hCcfXrDwLCu4wQHtNdPyoJkEbkgIElA.tar.br" }
     imports [
         pf.Stdout,
@@ -9,7 +9,7 @@ app "day-4-part-1"
     provides [main] to pf
 
 day = "4"
-part = "1"
+part = "2"
 
 testInput =
     """
@@ -21,15 +21,14 @@ testInput =
     Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
     """
 
-testInputResult : Num.U32
-testInputResult = 13
+testInputResult = 30
 
 main =
     start <- Task.await Utc.now
     _ <- Task.await (Stdout.line "Run app for day \(day) (part \(part)):")
 
-    _ <- Task.await (Stdout.line " Result:")
-    dbg solve puzzleInput
+    result = solve puzzleInput
+    _ <- Task.await (Stdout.line " Result: \(Num.toStr result)")
 
     end <- Task.await Utc.now
     duration = end |> Utc.deltaAsMillis start |> Num.toStr
@@ -39,10 +38,9 @@ solve = \input ->
     input
     |> Str.split "\n"
     |> List.map rowToCard
-    |> List.map cardValue
+    |> \deck ->
+        List.mapWithIndex deck \_, index -> getCardCount deck index
     |> List.sum
-
-expect (solve testInput) == testInputResult
 
 Card : { id : Str, winningNumbers : List U32, numbers : List U32 }
 
@@ -101,20 +99,30 @@ parseNumbers = \str ->
 
 expect (parseNumbers "83 86  6 31 17  9 48 53") == [83, 86, 6, 31, 17, 9, 48, 53]
 
-cardValue : Card -> Num.U32
-cardValue = \card ->
+matchesCount : Card -> Nat
+matchesCount = \card ->
     winningNumbers = Set.fromList card.winningNumbers
     numbers = Set.fromList card.numbers
+    Set.intersection winningNumbers numbers |> Set.len
 
-    elements = Set.intersection winningNumbers numbers |> Set.toList
+expect (matchesCount { id: "1", winningNumbers: [41, 48, 83, 86, 17], numbers: [83, 86, 6, 31, 17, 9, 48, 53] }) == 4
 
-    List.walk
-        elements
-        0
-        \state, _ ->
-            if state == 0 then
-                1
-            else
-                state * 2
+getCardCount : List Card, Nat -> Nat
+getCardCount = \deck, cardIndex ->
+    card =
+        deck
+        |> List.get cardIndex
+        |> \result ->
+            when result is
+                Ok cardAtIndex -> cardAtIndex
+                Err OutOfBounds -> crash "Could not get card at \(Num.toStr cardIndex)."
+    count = matchesCount card
+    nextIndecies = if count == 0 then [] else List.range { start: At (cardIndex + 1), end: At (cardIndex + count) }
 
-expect (cardValue { id: "1", winningNumbers: [41, 48, 83, 86, 17], numbers: [83, 86, 6, 31, 17, 9, 48, 53] }) == 8
+    sum =
+        nextIndecies
+        |> List.map (\index -> getCardCount deck index)
+        |> List.sum
+
+    1 + sum
+
