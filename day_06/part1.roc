@@ -42,6 +42,31 @@ solve = \input ->
                 [listA, listB] -> List.map2 listA listB (\a, b -> { time: a, distance: b })
                 _ -> []
     data
+    |> List.map waysToWinTheRace
+    |> List.walk 1 (\state, x -> state * x)
+
+expect
+    actual = solve testInput
+    actual == 288
+
+waysToWinTheRace = \{ time, distance } ->
+    List.range { start: At 1, end: At time }
+    |> List.walk
+        0
+        (\state, pushTime ->
+            raceTime = time - pushTime
+            speed = pushTime * 1
+            raceDistance = raceTime * speed
+
+            if raceDistance > distance then
+                state + 1
+            else
+                state
+        )
+
+expect
+    actual = waysToWinTheRace { time: 7, distance: 9 }
+    actual == 4
 
 pSingleNumber =
     const (\n -> n)
