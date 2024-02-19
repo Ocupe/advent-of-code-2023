@@ -7,7 +7,7 @@ app "day-6-part-1"
         pf.Stdout,
         pf.Task.{ Task },
         pf.Utc,
-        # "input.txt" as puzzleInput : Str,
+        "input.txt" as puzzleInput : Str,
         parser.Core.{ many, Parser, const, skip, keep, chompUntil },
         parser.String.{ parseStr, codeunit, digits, string },
     ]
@@ -27,7 +27,7 @@ main =
     _ <- Task.await (Stdout.line "Run app for day \(day) (part \(part)):")
 
     _ <- Task.await (Stdout.line " Result:")
-    dbg solve testInput
+    dbg solve puzzleInput
 
     end <- Task.await Utc.now
     duration = end |> Utc.deltaAsMillis start |> Num.toStr
